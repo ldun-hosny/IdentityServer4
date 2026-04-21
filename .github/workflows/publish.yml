@@ -4,6 +4,12 @@ on:
   push:
     tags:
     - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., 5.0.0)'
+        required: true
+        type: string
 
 env:
   DOTNET_NOLOGO: true
@@ -34,14 +40,22 @@ jobs:
 
     - name: Pack packages
       run: |
-        VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        fi
         bash scripts/pack.sh --version "$VERSION" --out ./nupkg
 
     - name: Push to NuGet
       env:
         NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
       run: |
-        VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        fi
         bash scripts/publish.sh \
           --version "$VERSION" \
           --out ./nupkg \
