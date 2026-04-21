@@ -77,6 +77,10 @@ if [[ -z "$OUT" ]]; then
   OUT="/tmp/ids4-pack-$VERSION"
 fi
 
+if [[ "$OUT" != /* ]]; then
+  OUT="$ROOT_DIR/$OUT"
+fi
+
 rm -rf "$OUT"
 mkdir -p "$OUT"
 

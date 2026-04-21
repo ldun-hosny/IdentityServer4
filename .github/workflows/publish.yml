@@ -41,46 +41,89 @@ jobs:
         bash dotnet-install.sh --version 8.0.125 --install-dir "$HOME/.dotnet"
         echo "$HOME/.dotnet" >> "$GITHUB_PATH"
 
+    - name: Preflight tool checks
+      run: |
+        set -euo pipefail
+        gh --version
+        dotnet --info
+
     - name: Verify build and tests (benchmarks disabled in publish)
       run: bash scripts/verify.sh --run-restore 1 --run-benchmarks 0
 
+    - name: Resolve version and tag
+      run: |
+        set -euo pipefail
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          VERSION="${{ github.event.inputs.version }}"
+          TAG="v${VERSION}"
+        else
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+        fi
+
+        if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+          echo "Invalid version: $VERSION" >&2
+          exit 1
+        fi
+
+        echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
+        echo "TAG=${TAG}" >> "$GITHUB_ENV"
+
     - name: Pack packages
       run: |
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          VERSION="${{ github.event.inputs.version }}"
-        else
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-        fi
         bash scripts/pack.sh --version "$VERSION" --out ./nupkg
 
-    - name: Push to NuGet
-      env:
-        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
-      run: |
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          VERSION="${{ github.event.inputs.version }}"
-        else
-          VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
-        fi
-        bash scripts/publish.sh \
-          --version "$VERSION" \
-          --out ./nupkg \
-          --source https://api.nuget.org/v3/index.json \
-          --api-key "$NUGET_API_KEY"
-
-    - name: Create GitHub Release
+    - name: Ensure GitHub Release exists
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         set -euo pipefail
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          TAG="v${{ github.event.inputs.version }}"
-        else
-          TAG="${GITHUB_REF_NAME}"
-        fi
-
         if gh release view "$TAG" >/dev/null 2>&1; then
           echo "Release already exists for $TAG"
         else
           gh release create "$TAG" --target "$GITHUB_SHA" --generate-notes
         fi
+
+    - name: Upload package artifact to GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        ASSET_NAME="nupkg-${VERSION}.tar.gz"
+        tar -C ./nupkg -czf "$ASSET_NAME" .
+        gh release upload "$TAG" "$ASSET_NAME" --clobber
+
+    - name: Download package artifact from GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -euo pipefail
+        ASSET_NAME="nupkg-${VERSION}.tar.gz"
+        rm -rf ./nupkg
+        mkdir -p ./artifact
+        for attempt in 1 2 3; do
+          if gh release download "$TAG" --pattern "$ASSET_NAME" --dir ./artifact; then
+            break
+          fi
+
+          if [[ "$attempt" -eq 3 ]]; then
+            echo "Failed to download release asset after 3 attempts: $ASSET_NAME" >&2
+            exit 1
+          fi
+
+          echo "Download attempt $attempt failed. Retrying in 3s..."
+          sleep 3
+        done
+
+        mkdir -p ./nupkg
+        tar -C ./nupkg -xzf "./artifact/$ASSET_NAME"
+
+    - name: Push to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        bash scripts/publish.sh \
+          --version "$VERSION" \
+          --out ./nupkg \
+          --source https://api.nuget.org/v3/index.json \
+          --api-key "$NUGET_API_KEY"
