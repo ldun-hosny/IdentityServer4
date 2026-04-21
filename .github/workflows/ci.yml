@@ -20,11 +20,42 @@ jobs:
     name: ${{ matrix.runs-on }}
     runs-on: ${{ matrix.runs-on }}
     steps: 
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.125
+    - name: Checkout repository (macOS/Linux)
+      if: runner.os != 'Windows'
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        git init "$GITHUB_WORKSPACE"
+        cd "$GITHUB_WORKSPACE"
+        git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git fetch --no-tags --prune --depth=1 origin "$GITHUB_SHA"
+        git checkout --detach FETCH_HEAD
+    - name: Checkout repository (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        git init $env:GITHUB_WORKSPACE
+        Set-Location $env:GITHUB_WORKSPACE
+        git remote add origin "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY.git"
+        git fetch --no-tags --prune --depth=1 origin $env:GITHUB_SHA
+        git checkout --detach FETCH_HEAD
+    - name: Install .NET SDK (macOS/Linux)
+      if: runner.os != 'Windows'
+      run: |
+        set -euo pipefail
+        curl -fsSL https://dot.net/v1/dotnet-install.sh -o dotnet-install.sh
+        bash dotnet-install.sh --version 8.0.125 --install-dir "$HOME/.dotnet"
+        echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+    - name: Install .NET SDK (Windows)
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1
+        .\dotnet-install.ps1 -Version 8.0.125 -InstallDir "$env:USERPROFILE\.dotnet"
+        "$env:USERPROFILE\.dotnet" | Out-File -FilePath $env:GITHUB_PATH -Append
     - if: contains(matrix.runs-on, 'macOS') || contains(matrix.runs-on, 'ubuntu')
       env:
         MINVERVERSIONOVERRIDE: ${{ secrets.MINVER_VERSION }}
