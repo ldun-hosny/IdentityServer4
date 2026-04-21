@@ -8,7 +8,7 @@ Usage:
 
 Optional:
   --run-restore     Restore all solutions before build/test (default: 1)
-  --run-benchmarks  Run benchmark suite (default: 1)
+  --run-benchmarks  Run benchmark suite (default: 1 locally, 0 in CI)
 
 Environment passthrough:
   BENCH_PROFILE, BENCH_AUTO_HOST, BENCH_BASE_URL, BENCH_TOKEN_PATH,
@@ -22,7 +22,13 @@ cd "$ROOT_DIR"
 NUGET_CONFIG="$ROOT_DIR/NuGet.config"
 BENCHMARK_SCRIPT="$ROOT_DIR/benchmark/run.sh"
 
-RUN_BENCHMARKS="${RUN_BENCHMARKS:-1}"
+if [[ -n "${RUN_BENCHMARKS+x}" ]]; then
+  RUN_BENCHMARKS="${RUN_BENCHMARKS}"
+elif [[ "${CI:-}" == "true" || "${CI:-}" == "1" || -n "${GITHUB_ACTIONS:-}" ]]; then
+  RUN_BENCHMARKS=0
+else
+  RUN_BENCHMARKS=1
+fi
 RUN_RESTORE="${RUN_RESTORE:-1}"
 RETRY_ATTEMPTS="${RETRY_ATTEMPTS:-2}"
 RETRY_DELAY_SECONDS="${RETRY_DELAY_SECONDS:-2}"

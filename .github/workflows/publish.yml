@@ -32,11 +32,8 @@ jobs:
       with:
         dotnet-version: 8.0.125
 
-    - name: Verify build and tests
-      env:
-        RUN_BENCHMARKS: 0
-        RUN_RESTORE: 1
-      run: bash scripts/verify.sh
+    - name: Verify build and tests (benchmarks disabled in publish)
+      run: bash scripts/verify.sh --run-restore 1 --run-benchmarks 0
 
     - name: Pack packages
       run: |
