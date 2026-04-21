@@ -12,6 +12,7 @@ env:
 jobs:
   publish:
     name: Publish to NuGet
+    environment: production
     runs-on: ubuntu-latest
     permissions:
       contents: read
