@@ -19,6 +19,9 @@ USAGE
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
+# NuGet.config includes a local source (./nuget). Ensure it exists on clean runners.
+mkdir -p "$ROOT_DIR/nuget"
+
 NUGET_CONFIG="$ROOT_DIR/NuGet.config"
 BENCHMARK_SCRIPT="$ROOT_DIR/benchmark/run.sh"
 
