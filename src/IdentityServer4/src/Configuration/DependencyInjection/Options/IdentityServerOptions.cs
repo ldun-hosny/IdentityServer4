@@ -42,8 +42,12 @@ namespace IdentityServer4.Configuration
         public bool EmitScopesAsSpaceDelimitedStringInJwt { get; set; } = false;
         
         /// <summary>
-        /// Specifies whether the JWT typ and content-type for JWT secured authorization requests is checked according to IETF spec.
-        /// This might break older OIDC conformant request objects.
+        /// Specifies whether the JWT typ and content-type for JWT secured authorization requests (JAR / RFC 9101)
+        /// is checked according to the IETF specification. When disabled (the default), non-conforming request
+        /// objects are accepted and a <c>Warning</c>-level log message is emitted so operators can identify
+        /// and migrate non-conformant clients before enabling strict enforcement.
+        /// Set to <c>true</c> once all clients have been verified to send a conforming <c>typ</c> header
+        /// (<c>oauth-authz-req+jwt</c>) and content-type. Defaults to <c>false</c>.
         /// </summary>
         public bool StrictJarValidation { get; set; } = false;
 

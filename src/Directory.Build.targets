@@ -1,10 +1,10 @@
 <Project>
 
   <PropertyGroup>
-    <FrameworkVersion>7.0.0</FrameworkVersion>
-    <ExtensionsVersion>7.0.0</ExtensionsVersion>
-    <EntityFrameworkVersion>7.0.0</EntityFrameworkVersion>
-    <IdentityServerVersion>4.2.0</IdentityServerVersion>
+    <FrameworkVersion>8.0.26</FrameworkVersion>
+    <ExtensionsVersion>8.0.1</ExtensionsVersion>
+    <EntityFrameworkVersion>8.0.26</EntityFrameworkVersion>
+    <IdentityServerVersion>5.0.0</IdentityServerVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,11 +23,11 @@
     <!--our stuff -->
     <PackageReference Update="IdentityModel" Version="6.0.0" />
 
-    <PackageReference Update="Cnblogs.IdentityServer4" Version="$(IdentityServerVersion)" />
-    <PackageReference Update="Cnblogs.IdentityServer4.AspNetIdentity" Version="$(IdentityServerVersion)" />
-    <PackageReference Update="Cnblogs.IdentityServer4.Storage" Version="$(IdentityServerVersion)" />
-    <PackageReference Update="Cnblogs.IdentityServer4.EntityFramework.Storage" Version="$(IdentityServerVersion)" />
-    <PackageReference Update="Cnblogs.IdentityServer4.EntityFramework" Version="$(IdentityServerVersion)" />
+    <PackageReference Update="Ldun.IdentityServer4" Version="$(IdentityServerVersion)" />
+    <PackageReference Update="Ldun.IdentityServer4.AspNetIdentity" Version="$(IdentityServerVersion)" />
+    <PackageReference Update="Ldun.IdentityServer4.Storage" Version="$(IdentityServerVersion)" />
+    <PackageReference Update="Ldun.IdentityServer4.EntityFramework.Storage" Version="$(IdentityServerVersion)" />
+    <PackageReference Update="Ldun.IdentityServer4.EntityFramework" Version="$(IdentityServerVersion)" />
 
     <!--microsoft extensions -->
     <PackageReference Update="Microsoft.Extensions.Caching.Memory" Version="$(ExtensionsVersion)" />
@@ -39,10 +39,10 @@
     
     <!--misc -->
     <PackageReference Update="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Update="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="6.25.0" />
-    <PackageReference Update="System.IdentityModel.Tokens.Jwt" Version="6.25.0" />
+    <PackageReference Update="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.17.0" />
+    <PackageReference Update="System.IdentityModel.Tokens.Jwt" Version="8.17.0" />
     <PackageReference Update="System.Security.Principal.Windows" Version="5.0.0" />
-    <PackageReference Update="AutoMapper" Version="12.0.0" />
+    <PackageReference Update="AutoMapper" Version="16.1.1" />
     
     <!--microsoft asp.net core -->
     <PackageReference Update="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="$(FrameworkVersion)" />

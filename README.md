@@ -1,7 +1,51 @@
-# Important update
-This organization is not maintained anymore besides critical security bugfixes (if feasible). This organization will be archived when .NET Core 3.1 end of support is reached (3rd Dec 2022). All new development is happening in the new [Duende Software](https://github.com/duendesoftware) organization. 
+# Ldun Fork Status
+This repository is an actively maintained ldun fork of IdentityServer4 for .NET 8 usage and security maintenance.
 
-The new [Duende IdentityServer](https://duendesoftware.com/products/identityserver) comes with a commercial license but is [free](https://blog.duendesoftware.com/posts/20220111_fair_trade/) for dev/testing/personal projects and companies or individuals making less than 1M USD gross annnual revenue. Please [get in touch with us](https://duendesoftware.com/contact) if you have any question.
+Published NuGet packages:
+
+- `Ldun.IdentityServer4`
+- `Ldun.IdentityServer4.Storage`
+- `Ldun.IdentityServer4.AspNetIdentity`
+- `Ldun.IdentityServer4.EntityFramework.Storage`
+- `Ldun.IdentityServer4.EntityFramework`
+
+The project remains licensed under Apache 2.0.
+
+Historical upstream context: the original IdentityServer4 project moved forward under Duende Software. This fork keeps the IdentityServer4 codebase available for ldun-managed use cases.
+
+## Migrating from the original IdentityServer4 packages
+
+If you are migrating from the upstream `IdentityServer4` NuGet packages:
+
+1. Replace package references:
+
+   | Before | After |
+   |--------|-------|
+   | `IdentityServer4` | `Ldun.IdentityServer4` |
+   | `IdentityServer4.Storage` | `Ldun.IdentityServer4.Storage` |
+   | `IdentityServer4.AspNetIdentity` | `Ldun.IdentityServer4.AspNetIdentity` |
+   | `IdentityServer4.EntityFramework.Storage` | `Ldun.IdentityServer4.EntityFramework.Storage` |
+   | `IdentityServer4.EntityFramework` | `Ldun.IdentityServer4.EntityFramework` |
+
+2. Target **.NET 8** or later — multi-framework targeting (`net6.0`, `net7.0`) is not supported by this fork.
+
+3. **Removed APIs** — the following members were removed; update call sites accordingly:
+
+   | Removed | Replacement |
+   |---------|-------------|
+   | `PrincipalExtensions.GetSubjectId()` | `PrincipalExtensions.GetDisplayName()` |
+   | `PrincipalExtensions.GetName()` | `PrincipalExtensions.GetDisplayName()` |
+
+4. **StrictJarValidation** — this option now emits `Warning`-level log messages for any client
+   sending non-conforming JWT authorization request objects (JAR / RFC 9101). Review your logs
+   after upgrading and migrate non-conforming clients before enabling strict enforcement:
+
+   ```csharp
+   services.AddIdentityServer(options =>
+   {
+       options.StrictJarValidation = true; // enable after all clients are conformant
+   });
+   ```
 
 ## About IdentityServer4
 [<img align="right" width="100px" src="https://dotnetfoundation.org/img/logo_big.svg" />](https://dotnetfoundation.org/projects?searchquery=IdentityServer&type=project)
@@ -18,10 +62,74 @@ Active development happens on the main branch. This always contains the latest v
 
 ## How to build
 
-* [Install](https://www.microsoft.com/net/download/core#/current) the latest .NET Core 3.1 SDK
+* [Install](https://www.microsoft.com/net/download/core#/current) the latest .NET 8 SDK
 * Install Git
 * Clone this repo
 * Run `build.ps1` or `build.sh` in the root of the cloned repo
+
+## Benchmark and Load Tests
+
+Load and performance validation scripts are available in [`benchmark/`](./benchmark).
+
+Profile-based targets are available:
+- `local` default profile: `>= 600` successful tokens/second and `p95 < 700ms`.
+- `ci` default profile: `>= 1000` successful tokens/second and `p95 < 250ms`.
+- Rate-limit stress scenario included for host/infrastructure DDoS controls.
+- Benchmark runner auto-starts local `src/IdentityServer4/host` by default.
+
+Run:
+
+```bash
+./benchmark/run.sh
+```
+
+Run strict profile locally:
+
+```bash
+BENCH_PROFILE=ci ./benchmark/run.sh
+```
+
+## Release Validation and Publish
+
+Step 1 - pre-publish verification gate (restore + build + tests + vulnerability scan + optional benchmark):
+
+```bash
+RUN_BENCHMARKS=0 ./scripts/verify.sh
+```
+
+Step 2 - package all NuGet artifacts:
+
+```bash
+./scripts/pack.sh --version 5.0.0 --out /tmp/ids4-pack-5.0.0
+```
+
+Step 3 - consumer package E2E gate against pre-packed artifacts:
+
+```bash
+./scripts/e2e-consumer.sh --version 5.0.0 --source /tmp/ids4-pack-5.0.0
+```
+
+Optional local consumer E2E with auto-pack:
+
+```bash
+./scripts/e2e-consumer.sh --version 5.0.0
+```
+
+Step 4 - publish prepared artifacts:
+
+```bash
+./scripts/publish.sh --version 5.0.0 --out /tmp/ids4-pack-5.0.0
+```
+
+Interactive all-in-one orchestrator (prompts for version + NuGet API key and runs all steps):
+
+```bash
+./scripts/release.sh
+```
+
+Compatibility aliases are still available:
+- `./publish-nuget.sh` -> `./scripts/release.sh`
+- `./scripts/verify-release.sh` -> `./scripts/verify.sh`
 
 ## Documentation
 For project documentation, please visit [readthedocs](https://identityserver4.readthedocs.io).

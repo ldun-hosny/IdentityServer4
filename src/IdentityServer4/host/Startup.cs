@@ -6,6 +6,7 @@ using System;
 using IdentityServerHost.Configuration;
 using IdentityModel;
 using IdentityServer4;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ using Microsoft.IdentityModel.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Linq;
+using System.IO;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -27,10 +29,12 @@ namespace IdentityServerHost
     public class Startup
     {
         private readonly IConfiguration _config;
+        private readonly IWebHostEnvironment _env;
 
-        public Startup(IConfiguration config)
+        public Startup(IConfiguration config, IWebHostEnvironment env)
         {
             _config = config;
+            _env = env;
 
             IdentityModelEventSource.ShowPII = true;
         }
@@ -59,7 +63,7 @@ namespace IdentityServerHost
                 .AddInMemoryIdentityResources(Resources.IdentityResources)
                 .AddInMemoryApiScopes(Resources.ApiScopes)
                 .AddInMemoryApiResources(Resources.ApiResources)
-                .AddSigningCredential()
+                .AddSigningCredential(_env.ContentRootPath)
                 .AddExtensionGrantValidator<Extensions.ExtensionGrantValidator>()
                 .AddExtensionGrantValidator<Extensions.NoSubjectExtensionGrantValidator>()
                 .AddJwtBearerClientAuthentication()
@@ -131,20 +135,46 @@ namespace IdentityServerHost
 
     public static class BuilderExtensions
     {
-        public static IIdentityServerBuilder AddSigningCredential(this IIdentityServerBuilder builder)
+        public static IIdentityServerBuilder AddSigningCredential(this IIdentityServerBuilder builder, string contentRootPath)
         {
             // create random RS256 key
             //builder.AddDeveloperSigningCredential();
 
+            const string rsaCertificateFileName = "identityserver.test.rsa.p12";
+            const string ecdsaCertificateFileName = "identityserver.test.ecdsa.p12";
+
+            var candidateKeyDirectories = new[]
+            {
+                Path.Combine(AppContext.BaseDirectory, "Keys"),
+                Path.Combine(AppContext.BaseDirectory, "keys"),
+                Path.Combine(contentRootPath, "Keys"),
+                Path.Combine(contentRootPath, "keys"),
+                Path.Combine(contentRootPath, "src", "IdentityServer4", "host", "Keys"),
+                Path.Combine(contentRootPath, "src", "IdentityServer4", "host", "keys")
+            };
+
+            var keysDirectory = candidateKeyDirectories.FirstOrDefault(candidateDirectory =>
+                File.Exists(Path.Combine(candidateDirectory, rsaCertificateFileName)) &&
+                File.Exists(Path.Combine(candidateDirectory, ecdsaCertificateFileName)));
+
+            if (keysDirectory == null)
+            {
+                throw new FileNotFoundException(
+                    $"Signing certificates were not found. Checked directories: {string.Join(", ", candidateKeyDirectories)}");
+            }
+
+            var rsaCertificatePath = Path.Combine(keysDirectory, rsaCertificateFileName);
+            var ecdsaCertificatePath = Path.Combine(keysDirectory, ecdsaCertificateFileName);
+
             // use an RSA-based certificate with RS256
-            var rsaCert = new X509Certificate2("./keys/identityserver.test.rsa.p12", "changeit");
+            var rsaCert = new X509Certificate2(rsaCertificatePath, "changeit");
             builder.AddSigningCredential(rsaCert, "RS256");
 
             // ...and PS256
             builder.AddSigningCredential(rsaCert, "PS256");
 
             // or manually extract ECDSA key from certificate (directly using the certificate is not support by Microsoft right now)
-            var ecCert = new X509Certificate2("./keys/identityserver.test.ecdsa.p12", "changeit");
+            var ecCert = new X509Certificate2(ecdsaCertificatePath, "changeit");
             var key = new ECDsaSecurityKey(ecCert.GetECDsaPrivateKey())
             {
                 KeyId = CryptoRandom.CreateUniqueId(16, CryptoRandom.OutputFormat.Hex)

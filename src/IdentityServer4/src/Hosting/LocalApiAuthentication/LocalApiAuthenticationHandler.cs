@@ -3,6 +3,7 @@
 
 
 using IdentityModel;
+using IdentityServer4.Logging;
 using IdentityServer4.Validation;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
@@ -67,7 +68,7 @@ namespace IdentityServer4.Hosting.LocalApiAuthentication
                 return AuthenticateResult.Fail("No Access Token is sent.");
             }
 
-            _logger.LogTrace("Token found: {token}", token);
+            _logger.LogTrace("Token found: {token}", SensitiveDataMasker.MaskToken(token));
 
             TokenValidationResult result = await _tokenValidator.ValidateAccessTokenAsync(token, Options.ExpectedScope);
 

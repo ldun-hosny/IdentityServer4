@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using IdentityModel;
@@ -32,7 +33,7 @@ namespace IdentityServer.IntegrationTests.Endpoints.Authorize
         private readonly IdentityServerPipeline _mockPipeline = new IdentityServerPipeline();
         private readonly Client _client;
 
-        private readonly string _symmetricJwk = @"{ 'kty': 'oct', 'use': 'sig', 'kid': '1', 'k': 'nYA-IFt8xTsdBHe9hunvizcp3Dt7f6qGqudq18kZHNtvqEGjJ9Ud-9x3kbQ-LYfLHS3xM2MpFQFg1JzT_0U_F8DI40oby4TvBDGszP664UgA8_5GjB7Flnrlsap1NlitvNpgQX3lpyTvC2zVuQ-UVsXbBDAaSBUSlnw7SE4LM8Ye2WYZrdCCXL8yAX9vIR7vf77yvNTEcBCI6y4JlvZaqMB4YKVSfygs8XqGGCHjLpE5bvI-A4ESbAUX26cVFvCeDg9pR6HK7BmwPMlO96krgtKZcXEJtUELYPys6-rbwAIdmxJxKxpgRpt0FRv_9fm6YPwG7QivYBX-vRwaodL1TA', 'alg': 'HS256'}";
+        private readonly string _symmetricJwk = @"{ 'kty': 'oct', 'use': 'sig', 'kid': '1', 'k': 'nYA-IFt8xTsdBHe9hunvizcp3Dt7f6qGqudq18kZHNtvqEGjJ9Ud-9x3kbQ-LYfLHS3xM2MpFQFg1JzT_0U_F8DI40oby4TvBDGszP664UgA8_5GjB7Flnrlsap1NlitvNpgQX3lpyTvC2zVuQ-UVsXbBDAaSBUSlnw7SE4LM8Ye2WYZrdCCXL8yAX9vIR7vf77yvNTEcBCI6y4JlvZaqMB4YKVSfygs8XqGGCHjLpE5bvI-A4ESbAUX26cVFvCeDg9pR6HK7BmwPMlO96krgtKZcXEJtUELYPys6-rbwAIdmxJxKxpgRpt0FRv_9fm6YPwG7QivYBX-vRwaodL1TA', 'alg': 'HS256'}".Replace('\'', '"');
         private readonly RsaSecurityKey _rsaKey;
 
         public JwtRequestAuthorizeTests()
@@ -542,6 +543,71 @@ namespace IdentityServer.IntegrationTests.Endpoints.Authorize
             someArr2 = JsonConvert.DeserializeObject<string[]>(_mockPipeline.LoginRequest.Parameters["someArr"]);
             someArr2.Should().Contain(new[] { "a", "c", "b" });
             someArr2.Length.Should().Be(3);
+        }
+
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task authorize_should_preserve_json_element_claims_in_request_object()
+        {
+            // These edge-case shapes exercise the System.Text.Json.JsonElement branch in
+            // JwtRequestValidator.ProcessPayloadAsync that was added for Microsoft.IdentityModel 7.x.
+            var nestedObj = new { level1 = new { level2 = new { value = 42 } }, tags = new[] { "a", "b" } };
+            var nestedObjJson = JsonConvert.SerializeObject(nestedObj);
+
+            var emptyObj = new { };
+            var emptyObjJson = JsonConvert.SerializeObject(emptyObj);
+
+            var emptyArr = Array.Empty<string>();
+            var emptyArrJson = JsonConvert.SerializeObject(emptyArr);
+
+            var requestJwt = CreateRequestJwt(
+                issuer: _client.ClientId,
+                audience: IdentityServerPipeline.BaseUrl,
+                credential: new X509SigningCredentials(TestCert.Load()),
+                claims: new[] {
+                    new Claim("client_id", _client.ClientId),
+                    new Claim("response_type", "id_token"),
+                    new Claim("scope", "openid profile"),
+                    new Claim("state", "123state"),
+                    new Claim("nonce", "123nonce"),
+                    new Claim("redirect_uri", "https://client/callback"),
+                    new Claim("nestedObj", nestedObjJson, Microsoft.IdentityModel.JsonWebTokens.JsonClaimValueTypes.Json),
+                    new Claim("emptyObj", emptyObjJson, Microsoft.IdentityModel.JsonWebTokens.JsonClaimValueTypes.Json),
+                    new Claim("emptyArr", emptyArrJson, Microsoft.IdentityModel.JsonWebTokens.JsonClaimValueTypes.JsonArray),
+                });
+
+            var url = _mockPipeline.CreateAuthorizeUrl(
+                clientId: _client.ClientId,
+                responseType: "id_token",
+                extra: Parameters.FromObject(new { request = requestJwt }));
+            var response = await _mockPipeline.BrowserClient.GetAsync(url);
+
+            _mockPipeline.LoginRequest.Should().NotBeNull();
+
+            // Nested object round-trips correctly
+            var nestedObjParam = _mockPipeline.LoginRequest.Parameters["nestedObj"];
+            nestedObjParam.Should().NotBeNull();
+            using var nestedDoc = JsonDocument.Parse(nestedObjParam);
+            nestedDoc.RootElement.GetProperty("level1").GetProperty("level2").GetProperty("value").GetInt32().Should().Be(42);
+            nestedDoc.RootElement.GetProperty("tags").GetArrayLength().Should().Be(2);
+
+            // Empty object round-trips correctly
+            var emptyObjParam = _mockPipeline.LoginRequest.Parameters["emptyObj"];
+            emptyObjParam.Should().NotBeNull();
+            using var emptyObjDoc = JsonDocument.Parse(emptyObjParam);
+            emptyObjDoc.RootElement.ValueKind.Should().Be(JsonValueKind.Object);
+
+            // Empty array round-trips correctly
+            var emptyArrParam = _mockPipeline.LoginRequest.Parameters["emptyArr"];
+            emptyArrParam.Should().NotBeNull();
+            using var emptyArrDoc = JsonDocument.Parse(emptyArrParam);
+            emptyArrDoc.RootElement.ValueKind.Should().Be(JsonValueKind.Array);
+            emptyArrDoc.RootElement.GetArrayLength().Should().Be(0);
+
+            // Same values are present in RequestObjectValues
+            _mockPipeline.LoginRequest.RequestObjectValues["nestedObj"].Should().Be(nestedObjParam);
+            _mockPipeline.LoginRequest.RequestObjectValues["emptyObj"].Should().Be(emptyObjParam);
+            _mockPipeline.LoginRequest.RequestObjectValues["emptyArr"].Should().Be(emptyArrParam);
         }
 
         [Fact]
@@ -1092,6 +1158,46 @@ namespace IdentityServer.IntegrationTests.Endpoints.Authorize
                 extra: Parameters.FromObject(new
                 {
                     request_uri = "http://" + new string('x', 512)
+                }));
+            var response = await _mockPipeline.BrowserClient.GetAsync(url);
+            _mockPipeline.ErrorWasCalled.Should().BeTrue();
+            _mockPipeline.LoginRequest.Should().BeNull();
+
+            _mockPipeline.JwtRequestMessageHandler.InvokeWasCalled.Should().BeFalse();
+        }
+
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task request_uri_with_non_http_scheme_should_fail()
+        {
+            _mockPipeline.Options.Endpoints.EnableJwtRequestUri = true;
+
+            var url = _mockPipeline.CreateAuthorizeUrl(
+                clientId: _client.ClientId,
+                responseType: "id_token",
+                extra: Parameters.FromObject(new
+                {
+                    request_uri = "javascript:alert(1)"
+                }));
+            var response = await _mockPipeline.BrowserClient.GetAsync(url);
+            _mockPipeline.ErrorWasCalled.Should().BeTrue();
+            _mockPipeline.LoginRequest.Should().BeNull();
+
+            _mockPipeline.JwtRequestMessageHandler.InvokeWasCalled.Should().BeFalse();
+        }
+
+        [Fact]
+        [Trait("Category", Category)]
+        public async Task request_uri_with_fragment_should_fail()
+        {
+            _mockPipeline.Options.Endpoints.EnableJwtRequestUri = true;
+
+            var url = _mockPipeline.CreateAuthorizeUrl(
+                clientId: _client.ClientId,
+                responseType: "id_token",
+                extra: Parameters.FromObject(new
+                {
+                    request_uri = "https://client_jwt#fragment"
                 }));
             var response = await _mockPipeline.BrowserClient.GetAsync(url);
             _mockPipeline.ErrorWasCalled.Should().BeTrue();

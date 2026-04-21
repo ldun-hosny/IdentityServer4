@@ -11,6 +11,7 @@ using IdentityServer4.Endpoints.Results;
 using IdentityServer4.Events;
 using IdentityServer4.Extensions;
 using IdentityServer4.Hosting;
+using IdentityServer4.Logging;
 using IdentityServer4.Logging.Models;
 using IdentityServer4.Models;
 using IdentityServer4.ResponseHandling;
@@ -158,15 +159,15 @@ namespace IdentityServer4.Endpoints
 
             if (response.IdentityToken != null)
             {
-                Logger.LogTrace("Identity token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.IdentityToken);
+                Logger.LogTrace("Identity token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.IdentityToken));
             }
             if (response.Code != null)
             {
-                Logger.LogTrace("Code issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.Code);
+                Logger.LogTrace("Code issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.Code));
             }
             if (response.AccessToken != null)
             {
-                Logger.LogTrace("Access token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.AccessToken);
+                Logger.LogTrace("Access token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.AccessToken));
             }
         }
 

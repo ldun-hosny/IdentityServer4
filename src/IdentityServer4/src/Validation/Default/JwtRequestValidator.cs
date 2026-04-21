@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using IdentityModel;
 using IdentityServer4.Configuration;
@@ -123,6 +124,15 @@ namespace IdentityServer4.Validation
                 return fail;
             }
 
+            if (!Options.StrictJarValidation &&
+                !string.Equals(jwtSecurityToken.Header.Typ, JwtClaimTypes.JwtTypes.AuthorizationRequest, StringComparison.Ordinal))
+            {
+                Logger.LogWarning(
+                    "JWT request object for client {clientId} uses typ '{typ}'. It is accepted because StrictJarValidation is disabled, but would be rejected if StrictJarValidation is enabled.",
+                    client.ClientId,
+                    jwtSecurityToken.Header.Typ ?? "<missing>");
+            }
+
             if (jwtSecurityToken.Payload.ContainsKey(OidcConstants.AuthorizeRequest.Request) ||
                 jwtSecurityToken.Payload.ContainsKey(OidcConstants.AuthorizeRequest.RequestUri))
             {
@@ -212,6 +222,11 @@ namespace IdentityServer4.Validation
                             valueType.Name == "JArray")    // Microsoft.IdentityModel.Json.Linq.JArray
                         {
                             payload.Add(key, value.ToString());
+                        }
+                        else if (value is JsonElement jsonElement &&
+                                 (jsonElement.ValueKind == JsonValueKind.Object || jsonElement.ValueKind == JsonValueKind.Array))
+                        {
+                            payload.Add(key, jsonElement.GetRawText());
                         }
                     }
                 }

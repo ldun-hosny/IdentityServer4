@@ -158,6 +158,19 @@ namespace IdentityServer4.Validation
                         return Invalid(request, error: OidcConstants.AuthorizeErrors.InvalidRequestUri, description: "request_uri is too long");
                     }
 
+                    if (!TryParseJwtRequestUri(jwtRequestUri, out var parsedJwtRequestUri))
+                    {
+                        LogError("request_uri is malformed or uses an unsupported URI format", request);
+                        return Invalid(request, error: OidcConstants.AuthorizeErrors.InvalidRequestUri, description: "Invalid request_uri");
+                    }
+
+                    if (string.Equals(parsedJwtRequestUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.LogWarning(
+                            "JWT request_uri for client {clientId} uses an insecure http:// URI and is accepted for compatibility. Use https:// to prevent interception risks (RFC 9101 section 10.4).",
+                            request.Client?.ClientId ?? "<unknown>");
+                    }
+
                     var jwt = await _jwtRequestUriHttpClient.GetJwtAsync(jwtRequestUri, request.Client);
                     if (jwt.IsMissing())
                     {
@@ -186,6 +199,26 @@ namespace IdentityServer4.Validation
 
             request.RequestObject = jwtRequest;
             return Valid(request);
+        }
+
+        private static bool TryParseJwtRequestUri(string jwtRequestUri, out Uri uri)
+        {
+            if (!Uri.TryCreate(jwtRequestUri, UriKind.Absolute, out uri))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(uri.Fragment))
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(uri.UserInfo))
+            {
+                return false;
+            }
+
+            return uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
         }
 
         private async Task<AuthorizeRequestValidationResult> LoadClientAsync(ValidatedAuthorizeRequest request)

@@ -156,3 +156,10 @@ It enables the following features in your applications:
    misc/training
    misc/blogs
    misc/videos
+
+.. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: Migration
+
+   migration/from-identityserver4

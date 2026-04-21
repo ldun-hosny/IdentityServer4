@@ -1,17 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <PackageId>Cnblogs.IdentityServer4.EntityFramework</PackageId>
-    <TargetFrameworks>net7.0</TargetFrameworks>
+    <PackageId>Ldun.IdentityServer4.EntityFramework</PackageId>
+    <TargetFrameworks>net8.0</TargetFrameworks>
 
     <Description>EntityFramework persistence layer for IdentityServer4</Description>
     <Authors>Brock Allen;Dominick Baier;Scott Brady</Authors>
     <AssemblyName>IdentityServer4.EntityFramework</AssemblyName>
     <PackageTags>OAuth2;OAuth 2.0;OpenID Connect;Security;Identity;IdentityServer;EntityFramework</PackageTags>
     <PackageIcon>icon.jpg</PackageIcon>
-    <PackageProjectUrl>https://github.com/cnblogs/IdentityServer4</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/ldun-hosny/IdentityServer4</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReleaseNotes>https://github.com/cnblogs/IdentityServer4/releases</PackageReleaseNotes>
+    <PackageReleaseNotes>https://github.com/ldun-hosny/IdentityServer4/releases</PackageReleaseNotes>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -33,9 +33,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cnblogs.IdentityServer4" />
-    <PackageReference Include="Cnblogs.IdentityServer4.EntityFramework.Storage" />
-    
+    <ProjectReference Include="..\..\IdentityServer4\src\IdentityServer4.csproj" />
+    <ProjectReference Include="..\..\EntityFramework.Storage\src\IdentityServer4.EntityFramework.Storage.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
 </Project>

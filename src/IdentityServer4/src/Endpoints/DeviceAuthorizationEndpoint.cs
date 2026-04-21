@@ -9,6 +9,7 @@ using IdentityServer4.Endpoints.Results;
 using IdentityServer4.Events;
 using IdentityServer4.Extensions;
 using IdentityServer4.Hosting;
+using IdentityServer4.Logging;
 using IdentityServer4.ResponseHandling;
 using IdentityServer4.Services;
 using IdentityServer4.Validation;
@@ -114,11 +115,11 @@ namespace IdentityServer4.Endpoints
 
             if (response.DeviceCode != null)
             {
-                _logger.LogTrace("Device code issued for {clientId}: {deviceCode}", clientId, response.DeviceCode);
+                _logger.LogTrace("Device code issued for {clientId}: {deviceCode}", clientId, SensitiveDataMasker.MaskToken(response.DeviceCode));
             }
             if (response.UserCode != null)
             {
-                _logger.LogTrace("User code issued for {clientId}: {userCode}", clientId, response.UserCode);
+                _logger.LogTrace("User code issued for {clientId}: {userCode}", clientId, SensitiveDataMasker.MaskToken(response.UserCode));
             }
             if (response.VerificationUri != null)
             {
@@ -126,7 +127,8 @@ namespace IdentityServer4.Endpoints
             }
             if (response.VerificationUriComplete != null)
             {
-                _logger.LogTrace("Verification URI (Complete) issued for {clientId}: {verificationUriComplete}", clientId, response.VerificationUriComplete);
+                // Mask to avoid leaking the user code embedded in the URI
+                _logger.LogTrace("Verification URI (Complete) issued for {clientId}: {verificationUriComplete}", clientId, SensitiveDataMasker.MaskToken(response.VerificationUriComplete));
             }
         }
     }

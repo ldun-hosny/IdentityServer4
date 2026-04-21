@@ -7,6 +7,7 @@ using IdentityServer4.Endpoints.Results;
 using IdentityServer4.Events;
 using IdentityServer4.Extensions;
 using IdentityServer4.Hosting;
+using IdentityServer4.Logging;
 using IdentityServer4.ResponseHandling;
 using IdentityServer4.Services;
 using IdentityServer4.Validation;
@@ -124,15 +125,15 @@ namespace IdentityServer4.Endpoints
 
             if (response.IdentityToken != null)
             {
-                _logger.LogTrace("Identity token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.IdentityToken);
+                _logger.LogTrace("Identity token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.IdentityToken));
             }
             if (response.RefreshToken != null)
             {
-                _logger.LogTrace("Refresh token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.RefreshToken);
+                _logger.LogTrace("Refresh token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.RefreshToken));
             }
             if (response.AccessToken != null)
             {
-                _logger.LogTrace("Access token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, response.AccessToken);
+                _logger.LogTrace("Access token issued for {clientId} / {subjectId}: {token}", clientId, subjectId, SensitiveDataMasker.MaskToken(response.AccessToken));
             }
         }
     }

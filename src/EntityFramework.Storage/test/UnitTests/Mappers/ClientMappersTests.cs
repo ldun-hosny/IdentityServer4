@@ -4,8 +4,10 @@
 
 using System;
 using System.Linq;
+using AutoMapper;
 using FluentAssertions;
 using IdentityServer4.EntityFramework.Mappers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using Client = IdentityServer4.Models.Client;
 
@@ -102,5 +104,27 @@ namespace IdentityServer4.EntityFramework.UnitTests.Mappers
             model.ProtocolType.Should().Be(def.ProtocolType);
             model.ClientSecrets.First().Type.Should().Be(def.ClientSecrets.First().Type);
         }
+
+        [Fact]
+        public void NullLoggerFactory_does_not_suppress_invalid_configuration_errors()
+        {
+            // Regression: AutoMapper 16.x requires a ILoggerFactory in MapperConfiguration.
+            // Passing NullLoggerFactory.Instance must not swallow configuration validation errors.
+            Action act = () =>
+            {
+                new MapperConfiguration(cfg =>
+                {
+                    // MemberList.Destination causes AssertConfigurationIsValid() to throw when
+                    // the destination has a property that cannot be mapped from the source.
+                    cfg.CreateMap<MissingMemberSource, MissingMemberDest>(MemberList.Destination);
+                }, NullLoggerFactory.Instance)
+                    .AssertConfigurationIsValid();
+            };
+
+            act.Should().Throw<AutoMapperConfigurationException>();
+        }
+
+        private class MissingMemberSource { public int Id { get; set; } }
+        private class MissingMemberDest  { public int Id { get; set; } public int Unmapped { get; set; } }
     }
 }

@@ -44,14 +44,25 @@ namespace IdentityServer4.Services
             var response = await _client.SendAsync(req);
             if (response.StatusCode == System.Net.HttpStatusCode.OK)
             {
+                var mediaType = response.Content.Headers.ContentType?.MediaType;
+                var expectedMediaType = $"application/{JwtClaimTypes.JwtTypes.AuthorizationRequest}";
+                var validMediaType = string.Equals(mediaType, expectedMediaType, StringComparison.Ordinal);
+
                 if (_options.StrictJarValidation)
                 {
-                    if (!string.Equals(response.Content.Headers.ContentType.MediaType,
-                        $"application/{JwtClaimTypes.JwtTypes.AuthorizationRequest}", StringComparison.Ordinal))
+                    if (!validMediaType)
                     {
-                        _logger.LogError("Invalid content type {type} from jwt url {url}", response.Content.Headers.ContentType.MediaType, url);
+                        _logger.LogError("Invalid content type {type} from jwt url {url}", mediaType ?? "<missing>", url);
                         return null;
                     }
+                }
+                else if (!validMediaType)
+                {
+                    _logger.LogWarning(
+                        "JWT request_uri response content type {type} from jwt url {url} for client {clientId} is accepted because StrictJarValidation is disabled, but would be rejected if StrictJarValidation is enabled.",
+                        mediaType ?? "<missing>",
+                        url,
+                        client?.ClientId ?? "<unknown>");
                 }
 
                 _logger.LogDebug("Success http response from jwt url {url}", url);

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
 
     <AssemblyOriginatorKeyFile>../../../../key.snk</AssemblyOriginatorKeyFile>
     <SignAssembly>true</SignAssembly>
@@ -14,12 +14,11 @@
   
   <ItemGroup>
     <ProjectReference Include="..\..\src\IdentityServer4.EntityFramework.Storage.csproj" />
+    <ProjectReference Include="..\..\..\IdentityServer4\src\IdentityServer4.csproj" />
+    <ProjectReference Include="..\..\..\Storage\src\IdentityServer4.Storage.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Cnblogs.IdentityServer4" />
-    <PackageReference Include="Cnblogs.IdentityServer4.Storage" />
-    
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />

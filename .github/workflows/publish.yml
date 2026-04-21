@@ -1,0 +1,55 @@
+name: 'Publish NuGet Packages'
+
+on:
+  push:
+    tags:
+    - 'v*'
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  publish:
+    name: Publish to NuGet
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.125
+
+    - name: Verify build and tests
+      env:
+        RUN_BENCHMARKS: 0
+        RUN_RESTORE: 1
+      run: bash scripts/verify.sh
+
+    - name: Pack packages
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        bash scripts/pack.sh --version "$VERSION" --out ./nupkg
+
+    - name: Push to NuGet
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        VERSION=$(git describe --tags --abbrev=0 | sed 's/^v//')
+        bash scripts/publish.sh \
+          --version "$VERSION" \
+          --out ./nupkg \
+          --source https://api.nuget.org/v3/index.json \
+          --api-key "$NUGET_API_KEY"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
