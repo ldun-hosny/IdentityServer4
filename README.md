@@ -131,18 +131,6 @@ Compatibility aliases are still available:
 - `./publish-nuget.sh` -> `./scripts/release.sh`
 - `./scripts/verify-release.sh` -> `./scripts/verify.sh`
 
-## Documentation
-For project documentation, please visit [readthedocs](https://identityserver4.readthedocs.io).
-
-See [here](http://docs.identityserver.io/en/aspnetcore1/) for the 1.x docs, and [here](http://docs.identityserver.io/en/aspnetcore2/) for the 2.x docs.
-
-## Bug reports and feature requests
-Please use the [issue tracker](https://github.com/IdentityServer/IdentityServer4/issues) for that. We only support the latest version for free. For older versions, you can get a commercial support agreement with us.
-
-## Commercial and Community Support
-If you need help with implementing IdentityServer4 or your security architecture in general, there are both free and commercial support options.
-See [here](https://identityserver4.readthedocs.io/en/latest/intro/support.html) for more details.
-
 ## Acknowledgements
 IdentityServer4 is built using the following great open source projects and free services:
 
