@@ -11,7 +11,7 @@ Published NuGet packages:
 
 The project remains licensed under Apache 2.0.
 
-Historical upstream context: the original IdentityServer4 project moved forward under Duende Software. This fork keeps the IdentityServer4 codebase available for ldun-managed use cases.
+Historical upstream context: the original IdentityServer4 project moved forward under Duende Software. This fork keeps the IdentityServer4 codebase available for future maintaince and security updates.
 
 ## Migrating from the original IdentityServer4 packages
 
@@ -143,22 +143,6 @@ Please use the [issue tracker](https://github.com/IdentityServer/IdentityServer4
 If you need help with implementing IdentityServer4 or your security architecture in general, there are both free and commercial support options.
 See [here](https://identityserver4.readthedocs.io/en/latest/intro/support.html) for more details.
 
-## Sponsorship
-If you are a fan of the project or a company that relies on IdentityServer, you might want to consider sponsoring.
-This will help us devote more time to answering questions and doing feature development. If you are interested please head to our [Patreon](https://www.patreon.com/identityserver) page which has further details.
-
-### Platinum Sponsors
-[<img src="https://user-images.githubusercontent.com/1454075/62819413-39550c00-bb55-11e9-8f2f-a268c3552c71.png" width="200">](https://udelt.no)
-
-[<img src="https://user-images.githubusercontent.com/1454075/66454740-fb973580-ea68-11e9-9993-6c1014881528.png" width="200">](https://github.com/dotnet-at-microsoft)
-
-### Corporate Sponsors
-[Ritter Insurance Marketing](https://www.ritterim.com)  
-[ExtraNetUserManager](https://www.extranetusermanager.com/)  
-[Knab](https://www.knab.nl/)
-
-You can see a list of our current sponsors [here](https://github.com/IdentityServer/IdentityServer4/blob/main/SPONSORS.md) - and for companies we have some nice advertisement options as well.
-
 ## Acknowledgements
 IdentityServer4 is built using the following great open source projects and free services:
 
@@ -170,5 +154,3 @@ IdentityServer4 is built using the following great open source projects and free
 * [XUnit](https://xunit.github.io/)
 * [Fluent Assertions](http://www.fluentassertions.com/)
 * [GitReleaseManager](https://github.com/GitTools/GitReleaseManager)
-
-..and last but not least a big thanks to all our [contributors](https://github.com/IdentityServer/IdentityServer4/graphs/contributors)!
