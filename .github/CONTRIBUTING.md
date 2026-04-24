@@ -33,3 +33,6 @@ Before submitting a feature or substantial code contribution please discuss it w
 * [Don't "Push" Your Pull Requests](http://www.igvita.com/2011/12/19/dont-push-your-pull-requests/) by Ilya Grigorik.
 * [10 tips for better Pull Requests](http://blog.ploeh.dk/2015/01/15/10-tips-for-better-pull-requests/) by Mark Seemann
 * [How to write the perfect pull request](https://github.com/blog/1943-how-to-write-the-perfect-pull-request) by GitHub
+
+## Maintainer publishing notes
+Maintainers can find package publishing guidance in [MAINTAINER_PUBLISHING.md](./MAINTAINER_PUBLISHING.md).

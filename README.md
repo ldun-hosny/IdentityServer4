@@ -1,5 +1,12 @@
-# Ldun Fork Status
+# Ldun IdentityServer4 Fork
+
 This repository is an actively maintained ldun fork of IdentityServer4 for .NET 8 usage and security maintenance.
+
+IdentityServer4 is an OpenID Connect and OAuth 2.0 framework for ASP.NET Core. This fork is derived from [`cnblogs/IdentityServer4`](https://github.com/cnblogs/IdentityServer4) and the original IdentityServer4 codebase. It is maintained independently for ldun-managed use cases.
+
+The project remains licensed under Apache 2.0.
+
+## Packages
 
 Published NuGet packages:
 
@@ -11,134 +18,82 @@ Published NuGet packages:
 
 The project remains licensed under Apache 2.0.
 
-Historical upstream context: the original IdentityServer4 project moved forward under Duende Software. This fork keeps the IdentityServer4 codebase available for future maintaince and security updates.
+Historical upstream context: the original IdentityServer4 project moved forward under Duende Software. This fork keeps the IdentityServer4 codebase available for ldun-managed use cases.
 
 ## Migrating from the original IdentityServer4 packages
 
-If you are migrating from the upstream `IdentityServer4` NuGet packages:
+If you are migrating from the upstream `IdentityServer4` NuGet packages, replace package references only. Namespace usage in code typically remains `IdentityServer4`.
 
-1. Replace package references:
+| Before | After |
+|--------|-------|
+| `IdentityServer4` | `Ldun.IdentityServer4` |
+| `IdentityServer4.Storage` | `Ldun.IdentityServer4.Storage` |
+| `IdentityServer4.AspNetIdentity` | `Ldun.IdentityServer4.AspNetIdentity` |
+| `IdentityServer4.EntityFramework.Storage` | `Ldun.IdentityServer4.EntityFramework.Storage` |
+| `IdentityServer4.EntityFramework` | `Ldun.IdentityServer4.EntityFramework` |
 
-   | Before | After |
-   |--------|-------|
-   | `IdentityServer4` | `Ldun.IdentityServer4` |
-   | `IdentityServer4.Storage` | `Ldun.IdentityServer4.Storage` |
-   | `IdentityServer4.AspNetIdentity` | `Ldun.IdentityServer4.AspNetIdentity` |
-   | `IdentityServer4.EntityFramework.Storage` | `Ldun.IdentityServer4.EntityFramework.Storage` |
-   | `IdentityServer4.EntityFramework` | `Ldun.IdentityServer4.EntityFramework` |
+Target .NET 8 or later. Multi-framework targeting for `net6.0` and `net7.0` is not supported by this fork.
 
-2. Target **.NET 8** or later — multi-framework targeting (`net6.0`, `net7.0`) is not supported by this fork.
+### Removed APIs
 
-3. **Removed APIs** — the following members were removed; update call sites accordingly:
+The following members were removed; update call sites accordingly:
 
-   | Removed | Replacement |
-   |---------|-------------|
-   | `PrincipalExtensions.GetSubjectId()` | `PrincipalExtensions.GetDisplayName()` |
-   | `PrincipalExtensions.GetName()` | `PrincipalExtensions.GetDisplayName()` |
+| Removed | Replacement |
+|---------|-------------|
+| `PrincipalExtensions.GetSubjectId()` | `PrincipalExtensions.GetDisplayName()` |
+| `PrincipalExtensions.GetName()` | `PrincipalExtensions.GetDisplayName()` |
 
-4. **StrictJarValidation** — this option now emits `Warning`-level log messages for any client
-   sending non-conforming JWT authorization request objects (JAR / RFC 9101). Review your logs
-   after upgrading and migrate non-conforming clients before enabling strict enforcement:
+### Strict JAR Validation
 
-   ```csharp
-   services.AddIdentityServer(options =>
-   {
-       options.StrictJarValidation = true; // enable after all clients are conformant
-   });
-   ```
+`StrictJarValidation` emits `Warning`-level log messages for clients sending non-conforming JWT authorization request objects (JAR / RFC 9101). Review logs after upgrading and migrate non-conforming clients before enabling strict enforcement:
 
-## About IdentityServer4
-[<img align="right" width="100px" src="https://dotnetfoundation.org/img/logo_big.svg" />](https://dotnetfoundation.org/projects?searchquery=IdentityServer&type=project)
-
-IdentityServer is a free, open source [OpenID Connect](http://openid.net/connect/) and [OAuth 2.0](https://tools.ietf.org/html/rfc6749) framework for ASP.NET Core.
-Founded and maintained by [Dominick Baier](https://twitter.com/leastprivilege) and [Brock Allen](https://twitter.com/brocklallen), IdentityServer4 incorporates all the protocol implementations and extensibility points needed to integrate token-based authentication, single-sign-on and API access control in your applications.
-IdentityServer4 is officially [certified](https://openid.net/certification/) by the [OpenID Foundation](https://openid.net) and thus spec-compliant and interoperable.
-It is part of the [.NET Foundation](https://www.dotnetfoundation.org/), and operates under their [code of conduct](https://www.dotnetfoundation.org/code-of-conduct). It is licensed under [Apache 2](https://opensource.org/licenses/Apache-2.0) (an OSI approved license).
-
-For project documentation, please visit [readthedocs](https://identityserver4.readthedocs.io).
-
-## Branch structure
-Active development happens on the main branch. This always contains the latest version. Each (pre-) release is tagged with the corresponding version. The [aspnetcore1](https://github.com/IdentityServer/IdentityServer4/tree/aspnetcore1) and [aspnetcore2](https://github.com/IdentityServer/IdentityServer4/tree/aspnetcore2) branches contain the latest versions of the older ASP.NET Core based versions.
-
-## How to build
-
-* [Install](https://www.microsoft.com/net/download/core#/current) the latest .NET 8 SDK
-* Install Git
-* Clone this repo
-* Run `build.ps1` or `build.sh` in the root of the cloned repo
-
-## Benchmark and Load Tests
-
-Load and performance validation scripts are available in [`benchmark/`](./benchmark).
-
-Profile-based targets are available:
-- `local` default profile: `>= 600` successful tokens/second and `p95 < 700ms`.
-- `ci` default profile: `>= 1000` successful tokens/second and `p95 < 250ms`.
-- Rate-limit stress scenario included for host/infrastructure DDoS controls.
-- Benchmark runner auto-starts local `src/IdentityServer4/host` by default.
-
-Run:
-
-```bash
-./benchmark/run.sh
+```csharp
+services.AddIdentityServer(options =>
+{
+    options.StrictJarValidation = true; // enable after all clients are conformant
+});
 ```
 
-Run strict profile locally:
+## Build
+
+Install the .NET 8 SDK and Git, then run the platform build script from the repository root:
 
 ```bash
-BENCH_PROFILE=ci ./benchmark/run.sh
+./build.sh
 ```
 
-## Release Validation and Publish
+On Windows:
 
-Step 1 - pre-publish verification gate (restore + build + tests + vulnerability scan + optional benchmark):
+```powershell
+.\build.ps1
+```
+
+## Verification
+
+Run the local verification gate before release work:
 
 ```bash
-RUN_BENCHMARKS=0 ./scripts/verify.sh
+./scripts/verify.sh
 ```
 
-Step 2 - package all NuGet artifacts:
+The verification script covers restore, build, tests, vulnerability checks, and optional benchmarks.
 
-```bash
-./scripts/pack.sh --version 5.0.0 --out /tmp/ids4-pack-5.0.0
-```
+Benchmark and load-test details live in [`benchmark/README.md`](./benchmark/README.md).
 
-Step 3 - consumer package E2E gate against pre-packed artifacts:
+## Release and Publishing
 
-```bash
-./scripts/e2e-consumer.sh --version 5.0.0 --source /tmp/ids4-pack-5.0.0
-```
+NuGet publishing is automated through GitHub Actions in [`.github/workflows/publish.yml`](./.github/workflows/publish.yml).
 
-Optional local consumer E2E with auto-pack:
+Maintainers should trigger the `Publish NuGet Packages` workflow from a signed `v*` tag or with `workflow_dispatch`. See [`.github/MAINTAINER_PUBLISHING.md`](./.github/MAINTAINER_PUBLISHING.md) for maintainer notes.
 
-```bash
-./scripts/e2e-consumer.sh --version 5.0.0
-```
+Do not put private credentials, internal release procedure, or duplicated workflow internals in this README.
 
-Step 4 - publish prepared artifacts:
+## Documentation
 
-```bash
-./scripts/publish.sh --version 5.0.0 --out /tmp/ids4-pack-5.0.0
-```
+Fork-specific migration notes are available in [`docs/migration/from-identityserver4.rst`](./docs/migration/from-identityserver4.rst).
 
-Interactive all-in-one orchestrator (prompts for version + NuGet API key and runs all steps):
+The broader documentation under [`docs/`](./docs) is inherited from upstream IdentityServer4 and may still contain upstream package names, links, and support references. Treat those pages as technical reference material until they are fully fork-updated.
 
-```bash
-./scripts/release.sh
-```
+## Issues and Contributions
 
-Compatibility aliases are still available:
-- `./publish-nuget.sh` -> `./scripts/release.sh`
-- `./scripts/verify-release.sh` -> `./scripts/verify.sh`
-
-## Acknowledgements
-IdentityServer4 is built using the following great open source projects and free services:
-
-* [ASP.NET Core](https://github.com/dotnet/aspnetcore)
-* [Bullseye](https://github.com/adamralph/bullseye)
-* [SimpleExec](https://github.com/adamralph/simple-exec)
-* [MinVer](https://github.com/adamralph/minver)
-* [Json.Net](http://www.newtonsoft.com/json)
-* [XUnit](https://xunit.github.io/)
-* [Fluent Assertions](http://www.fluentassertions.com/)
-* [GitReleaseManager](https://github.com/GitTools/GitReleaseManager)
+Use this repository's issue tracker and pull requests for fork-specific bugs, maintenance work, and documentation fixes.
